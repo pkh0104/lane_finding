@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 from line import Line
+from moviepy.editor import VideoFileClip
 
 def birds_eye(img, M):
     img_size = (img.shape[1], img.shape[0])
@@ -18,16 +19,19 @@ def apply_thresholds(img):
     s_binary[(s_channel >= s_thresh_min) & (s_channel <= s_thresh_max)] = 1
 
     b_thresh_min = 155
+   #b_thresh_min = 145
     b_thresh_max = 200
     b_binary = np.zeros_like(b_channel)
     b_binary[(b_channel >= b_thresh_min) & (b_channel <= b_thresh_max)] = 1
 
     l_thresh_min = 225
+   #l_thresh_min = 215
     l_thresh_max = 255
     l_binary = np.zeros_like(l_channel)
     l_binary[(l_channel >= l_thresh_min) & (l_channel <= l_thresh_max)] = 1
 
-    combined_binary = np.zeros_like(s_binary)
+   # combined_binary = np.zeros_like(s_binary)
+    combined_binary = np.zeros_like(b_binary)
     combined_binary[(l_binary == 1) | (b_binary == 1)] = 1
 
     return combined_binary
@@ -39,7 +43,7 @@ def binary_image(img, binary):
 
     return thresholds 
 
-def extract_points(xi, yi, line):
+def extract_points(binary, xi, yi, line):
     if line.found == True:
         sidex, sidey, line.found = line.found_search(xi, yi)
     if line.found == False:
@@ -82,12 +86,14 @@ def extract_points(xi, yi, line):
         pts = np.array([np.flipud(np.transpose(np.vstack([line.fitx, line.Y])))])
     else:
         pts = np.array([np.transpose(np.vstack([line.fitx, line.Y]))])
+    line.count += 1
 
     return pts
 
-
-src = np.float32([[ 490,  482], [ 810,  482], [1250,  720], [  40,  720]])
-dst = np.float32([[   0,    0], [1280,    0], [1250,  720], [  40,  720]])
+#src = np.float32([[ 490,  482], [ 810,  482], [1250,  720], [  40,  720]])
+#dst = np.float32([[   0,    0], [1280,    0], [1250,  720], [  40,  720]])
+src = np.float32([[ 590,  515], [ 810,  520], [1260,  635], [  120,  665]])
+dst = np.float32([[   0,    0], [1280,    0], [1260,  720], [  120,  720]])
 
 M    = cv2.getPerspectiveTransform(src, dst)
 Minv = cv2.getPerspectiveTransform(dst, src)
@@ -95,20 +101,15 @@ Minv = cv2.getPerspectiveTransform(dst, src)
 Left  = Line('left')
 Right = Line('right')
 
-cap = cv2.VideoCapture('/home/kihyeon/Study/python/lane_finding/project_video.mp4')
-while(cap.isOpened()):
-    ret, frame = cap.read()
-    if ret is False:
-        print('read fail')
-        break
-
-    warped = birds_eye(frame, M)
+def process_video(img):
+    resized = cv2.resize(img, (1280,720), cv2.INTER_AREA)
+    warped = birds_eye(resized, M)
     binary = apply_thresholds(warped)
-    #thresholds = binary_image(warped, binary)
+    thresholds = binary_image(warped, binary)
 
     x, y = np.nonzero(np.transpose(binary))
-    left_pts   = extract_points(x, y, Left)
-    right_pts  = extract_points(x, y, Right)
+    left_pts   = extract_points(binary, x, y, Left)
+    right_pts  = extract_points(binary, x, y, Right)
 
     warp_zero = np.zeros_like(binary).astype(np.uint8)
     color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
@@ -116,13 +117,33 @@ while(cap.isOpened()):
 
     cv2.polylines(color_warp, np.int_([pts]), isClosed=False, color=(255,0,0), thickness=20)
     cv2.fillPoly(color_warp, np.int_(pts), (34, 255, 34))
-    newwarp = cv2.warpPerspective(color_warp, Minv, (frame.shape[1], frame.shape[0]))
-    result = cv2.addWeighted(frame, 1, newwarp, 0.5, 0)
+    newwarp = cv2.warpPerspective(color_warp, Minv, (resized.shape[1], resized.shape[0]))
+    result = cv2.addWeighted(resized, 1, newwarp, 0.5, 0)
 
-    cv2.imshow('frame', result)
+    return warped 
+
+
+video_output = '/home/kihyeon/Study/python/lane_finding/line_detected.mp4'
+clip1 = VideoFileClip('/home/kihyeon/Study/python/lane_finding/20180531_075532_I_A.avi').subclip(23,34)
+white_clip = clip1.fl_image(process_video)
+white_clip.write_videofile(video_output, audio=False)
+
+"""
+#cap = cv2.VideoCapture('/home/kihyeon/Study/python/lane_finding/project_video.mp4')
+cap = cv2.VideoCapture('/home/kihyeon/Study/python/lane_finding/20180531_075532_I_A.avi')
+while(cap.isOpened()):
+    ret, frame = cap.read()
+    if ret is False:
+        print('read fail')
+        break
+
+    processed = process_video(frame, M, Minv, Left, Right)
+
+    cv2.imshow('frame', processed)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 cap.release()
 cv2.destroyAllWindows()
+"""
