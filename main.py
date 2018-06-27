@@ -70,6 +70,7 @@ def extract_points(binary, xi, yi, line):
     line.Y = sidey
 
     side_fit = np.polyfit(sidey, sidex, 2)
+    line.fit0.append(side_fit[0])
     line.fit1.append(side_fit[1])
     line.fit2.append(side_fit[2])
     side_fit = [np.mean(line.fit0),
