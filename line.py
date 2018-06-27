@@ -36,8 +36,8 @@ class Line:
                 if np.sum(x_window) != 0:
                     xvals.extend(x_window)
                     yvals.extend(y_window)
-                i -= 90
-                j -= 90
+                i -= 30
+                j -= 30
         if np.sum(xvals) > 0:
             self.found = True
         else:
@@ -59,8 +59,8 @@ class Line:
                 if np.sum(x_window) != 0:
                     np.append(xvals, x_window)
                     np.append(yvals, y_window)
-                i -= 90
-                j -= 90
+                i -= 30
+                j -= 30
         if np.sum(xvals) == 0:
             self.found = False
         return xvals, yvals, self.found
