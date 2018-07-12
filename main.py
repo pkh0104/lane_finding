@@ -126,25 +126,21 @@ def process_video(img):
     return result
   ##return thresholds
 
-
-video_output = '/home/kihyeon/Study/python/lane_finding/line_detected.mp4'
-clip1 = VideoFileClip('/home/kihyeon/Study/python/lane_finding/20180531_075532_I_A.avi').subclip(0,35)
-#clip1 = VideoFileClip('/home/kihyeon/Study/python/lane_finding/20180531_075357_I_A.avi').subclip(0,10)
-#clip1 = VideoFileClip('/home/kihyeon/Study/python/lane_finding/20180531_075457_I_A.avi').subclip(0,4)
-#clip1 = VideoFileClip('/home/kihyeon/Study/python/lane_finding/20180531_075614_I_A.avi').subclip(0,44)
+'''
+video_output = '/home/swm/work/lane_finding/line_detected.mp4'
+clip1 = VideoFileClip('/home/swm/work/lane_finding/20180531_075532_I_A.avi').subclip(0,35)
 white_clip = clip1.fl_image(process_video)
 white_clip.write_videofile(video_output, audio=False)
+'''
 
-"""
-#cap = cv2.VideoCapture('/home/kihyeon/Study/python/lane_finding/project_video.mp4')
-cap = cv2.VideoCapture('/home/kihyeon/Study/python/lane_finding/20180531_075532_I_A.avi')
+cap = cv2.VideoCapture('/home/swm/work/lane_finding/20180531_075532_I_A.avi')
 while(cap.isOpened()):
     ret, frame = cap.read()
     if ret is False:
         print('read fail')
         break
 
-    processed = process_video(frame, M, Minv, Left, Right)
+    processed = process_video(frame)
 
     cv2.imshow('frame', processed)
 
@@ -153,4 +149,3 @@ while(cap.isOpened()):
 
 cap.release()
 cv2.destroyAllWindows()
-"""
